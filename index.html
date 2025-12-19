@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>雪茄智汇 Cigar Pro</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+<script type="importmap">
+{
+"imports": {
+"react": "https://esm.sh/react@18.2.0",
+"react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+"lucide-react": "https://esm.sh/lucide-react@0.263.1"
+}
+}
+</script>
+
+<style>
+html, body {
+/* 修改点：确保全屏高度 */
+height: 100%;
+width: 100%;
+overflow: hidden; /* 防止整体页面滚动，交由内部 div 滚动 */
+}
+
+body {
+/* 修改点：背景色改为应用主色，移除原来的桌面背景色 */
+background-color: #F5F0E6;
+margin: 0;
+font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+/* 防止 iOS 橡皮筋效果 */
+overscroll-behavior: none;
+}
+
+#root {
+height: 100%;
+width: 100%;
+}
+
+/* 隐藏滚动条但保留功能 */
+.no-scrollbar::-webkit-scrollbar {
+display: none;
+}
+.no-scrollbar {
+-ms-overflow-style: none;
+scrollbar-width: none;
+}
+
+/* 自定义好看的滚动条 */
+.custom-scrollbar::-webkit-scrollbar {
+width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+background-color: #D1C7B7;
+border-radius: 20px;
+}
+
+/* 动画效果类 */
+.animate-in { animation: animateIn 0.3s ease-out forwards; }
+.fade-in { opacity: 0; animation-name: fadeIn; }
+.slide-in-from-bottom { transform: translateY(100%); animation-name: slideInFromBottom; }
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideInFromBottom { from { transform: translateY(100%); } to { transform: translateY(0); } }
+</style>
+</head>
+<body>
+
+<div id="root"></div>
+
+<script type="text/babel" data-type="module">
+import React, { useState, useEffect, useRef } from 'react';
+import { createRoot } from 'react-dom/client';
+// 从 esm.sh 导入图标
+import {
+MessageSquare, Mic, BookOpen, User, ChevronRight, Home, ArrowLeft, Send, Volume2,
+Search, Info, Settings, Battery, Signal, Wifi, Keyboard, AlertCircle, RefreshCw,
+Database, Tag, X, Filter, Map, Wine, Thermometer, Layers, Crown, Sparkles,
+Shuffle, Activity, Footprints, Ear, Lightbulb, Globe, Flame, Scissors, BrainCircuit
+} from 'lucide-react';
+
+// --- API Configuration ---
+// ⚠️ 请在此处填入您的 DeepSeek API Key
+const apiKey = "sk-90c7039daec146e2a8e262c763adbe09";
+
+// --- Design System Constants ---
+const COLORS = {
+bg: '#F5F0E6', // Cream/Beige
+primary: '#8B5A2B', // Cigar Brown
+primaryDark: '#6F451F',
+secondary: '#8FA893',// Sage Green
+accent: '#C5A059', // Gold
+text: '#4B3621', // Dark Coffee
+textLight: '#8D7B68',
+white: '#FFFFFF',
+cardShadow: '0 4px 12px -2px rgba(75, 54, 33, 0.08), 0 2px 6px -1px rgba(75, 54, 33, 0.04)',
+};
+
+// --- Reusable Components ---
+
+const StatusBar = () => (
+<div className="h-12 w-full flex justify-between items-end px-6 pb-2 select-none z-50 absolute top-0 left-0 bg-gradient-to-b from-[#F5F0E6]/90 to-transparent pointer-events-none pt-[env(safe-area-inset-top)]">
+<span className="text-xs font-bold text-[#4B3621]">21:00</span>
+<div className="flex gap-1.5 items-center text-[#4B3621]">
+<Signal size={14} fill="#4B3621" />
+<Wifi size={14} />
+<Battery size={16} fill="#4B3621" />
+</div>
+</div>
+);
+
+const Card = ({ children, className = '', onClick }) => (
+<div
+onClick={onClick}
+className={`rounded-2xl p-5 transition-all relative overflow-hidden ${onClick ? 'cursor-pointer active:scale-[0.98]' : ''} ${className}`}
+style={{ backgroundColor: COLORS.white, boxShadow: COLORS.cardShadow, color: COLORS.text }}
+>
+{children}
+</div>
+);
+
+const QuickChip = ({ text, onClick }) => (
+<button onClick={onClick} className="whitespace-nowrap px-4 py-2 rounded-full bg-white border border-[#E0D8CC] text-[#8B5A2B] text-xs font-bold shadow-sm active:scale-95 transition-all hover:bg-[#F5F0E6]">
+{text}
+</button>
+);
+
+// --- 1. 核心数据中心 (Knowledge Base) ---
+
+const PRODUCT_DB = [
+// --- 黄鹤楼 (Huanghelou) ---
+{
+id: 'hhl_yun2',
+brand: '黄鹤楼',
+name: '雪之韵 2号',
+series: '雪之韵系列',
+origin: '中国·湖北',
+strength: '中等',
+ring: 41,
+length: '132 mm',
+flavor: '前段木香清甜，中段烘焙香浓烈，尾段蜜甜',
+desc: '创新分享盒型，更具社交属性。风味层次分明，尤其适合搭配中国茶饮。',
+tags: ['中式', '黄鹤楼', '木香', '蜜甜']
+},
+{
+id: 'hhl_yun5',
+brand: '黄鹤楼',
+name: '雪之韵 5号',
+series: '雪之韵系列',
+origin: '中国·湖北',
+strength: '中等偏轻',
+ring: 38,
+length: '90 mm',
+flavor: '前段木香、干草香；中后段焦甜香、蜜甜香突出',
+desc: '专利便携底推盒型，短支设计，随时随地享受雪茄乐趣。',
+tags: ['中式', '黄鹤楼', '短支', '便携']
+},
+{
+id: 'hhl_dream',
+brand: '黄鹤楼',
+name: '雪之梦 9号',
+series: '雪之梦系列',
+origin: '中国·湖北',
+strength: '中等',
+ring: 60,
+length: '110 mm',
+flavor: '丰富的坚果香，伴有巧克力和烤面包气息',
+desc: '大环径短支雪茄，燃烧温度低，烟气量充沛，满足感极强。',
+tags: ['中式', '黄鹤楼', '大环径', '坚果']
+},
+{
+id: 'hhl_mini',
+brand: '黄鹤楼',
+name: '迷你原味',
+series: '迷你系列',
+origin: '中国·湖北',
+strength: '轻柔',
+ring: 20,
+length: '84 mm',
+flavor: '纯正的烟草本香，轻快无负担',
+desc: '机制小雪茄，适合碎片化时间享用，也是入门体验的不错选择。',
+tags: ['中式', '黄鹤楼', '机制', '入门']
+},
+// --- 长城 (Great Wall) ---
+{
+id: 'gw_ls3',
+brand: '长城',
+name: '揽胜 3号',
+series: '揽胜系列',
+origin: '中国·四川',
+strength: '中等',
+ring: 50,
+length: '124 mm',
+flavor: '陈年烟叶带来的醇厚口感，蜜甜与木香突出',
+desc: '精选窖藏多年的烟叶卷制，“揽胜”寓意无限风光，口感顺滑，香气持久。',
+tags: ['中式', '长城', '陈年', '醇厚']
+},
+{
+id: 'gw_132',
+brand: '长城',
+name: '132 奇迹',
+series: '132系列',
+origin: '中国·四川',
+strength: '中等',
+ring: 50,
+length: '132 mm',
+flavor: '经典的醇甜香风格，明显的豆香、烘焙香',
+desc: '传承自1964年“132小组”特供历史。采用独创“糊米发酵法”，是红色传奇的见证。',
+tags: ['中式', '长城', '历史', '豆香']
+},
+{
+id: 'gw_ss5',
+brand: '长城',
+name: '盛世 5号',
+series: '盛世系列',
+origin: '中国·四川',
+strength: '中等浓郁',
+ring: 48,
+length: '110 mm',
+flavor: '可可香、咖啡香为主，带有泥土气息',
+desc: '性价比极高的日常茄，燃烧均匀，香气饱满，是中国最畅销的手工雪茄之一。',
+tags: ['中式', '长城', '日常', '高性价比']
+},
+{
+id: 'gw_gj6',
+brand: '长城',
+name: 'GJ6 (G系列)',
+series: 'G系列',
+origin: '中国·四川',
+strength: '中等',
+ring: 42,
+length: '124 mm',
+flavor: '花香、果香清晰，口感甜润',
+desc: '年轻化的G系列代表作，主打花果香韵，适合年轻消费者和初学者。',
+tags: ['中式', '长城', '花果香', '年轻化']
+},
+// --- 国际品牌 (International) ---
+{
+id: 'dav_sig2',
+brand: '大卫杜夫',
+name: 'Signature No. 2',
+series: '签名系列',
+origin: '多米尼加',
+strength: '清淡柔和',
+ring: 38,
+length: '152 mm',
+flavor: '优雅的花香、泥土与奶油味',
+desc: '带有优雅“猪尾”的Panetela尺寸，是Zino Davidoff本人的最爱，入门首选。',
+tags: ['国际', '大卫杜夫', '花香', '经典']
+},
+{
+id: 'cohiba_behike',
+brand: '高希霸',
+name: 'Behike BHK 52',
+series: '贝黑克系列',
+origin: '古巴',
+strength: '浓郁',
+ring: 52,
+length: '119 mm',
+flavor: '极致顺滑，豆香、奶油、皮革与泥土',
+desc: '古巴雪茄的巅峰。含稀有Medio Tiempo烟叶，量少价高。',
+tags: ['国际', '高希霸', '旗舰', '浓郁']
+}
+];
+
+// 扩充后的百科知识库 (Encyclopedia)
+const WIKI_ARTICLES = [
+// --- 基础入门 ---
+{ id: 'basic_def', title: '什么是雪茄？(国家标准)', category: '基础入门', content: '根据GB/T 15269.1-2010：用烟草作茄芯，烟草或含有烟草成分的材料做茄衣、茄套卷制而成。其中手工雪茄要求自然烟草含量在20%以上。', keywords: ['定义', '国标', '成分'] },
+{ id: 'basic_shape', title: '雪茄形状大全：罗布图 vs 丘吉尔', category: '基础入门', content: '罗布图(Robusto)是短粗款，适合45分钟品鉴；丘吉尔(Churchill)长而粗，适合1小时以上；宾利(Panatela)细长优雅。形状影响燃烧温度和口感浓郁度。', keywords: ['形状', '尺寸', '罗布图'] },
+{ id: 'basic_cut', title: '剪茄礼仪：如何剪出一口好烟', category: '基础入门', content: '剪雪茄应保留茄帽的“肩部”（约2-3mm），不要剪太深导致茄衣散开。工具可选双刃剪（最通用）、打孔器（保留风味）、V型剪（聚拢烟气）。', keywords: ['剪刀', '礼仪', '工具'] },
+{ id: 'basic_light', title: '点火仪式：慢工出细活', category: '基础入门', content: '不要直接用火烧雪茄，应呈45度角旋转烘烤足部，待其均匀变红后再吸。切忌使用蜡烛或汽油打火机，会破坏雪茄风味。推荐丁烷喷枪或雪松木条。', keywords: ['点火', '打火机', '雪松木'] },
+{ id: 'basic_sick', title: '“晕茄”了怎么办？', category: '基础入门', content: '新手吸入过快或空腹抽烟容易摄入过多尼古丁导致头晕。急救法：停止抽吸，到通风处呼吸新鲜空气，最有效的是吃糖（可乐、巧克力），迅速提升血糖。', keywords: ['晕茄', '急救', '新手'] },
+
+// --- 历史文化 ---
+{ id: 'hist_origin', title: '词源考：从玛雅到欧洲', category: '历史文化', content: 'Cigar一词源于玛雅语“Sikar”（吸烟）。1492年哥伦布在古巴发现土著吸食烟草，随后带回欧洲，开启了雪茄的全球传播史。', keywords: ['历史', '哥伦布', '词源'] },
+
+// --- 工艺与结构 ---
+{ id: 'craft_parts', title: '解剖雪茄：衣、套、芯', category: '工艺百科', content: '茄衣(Wrapper)最贵，决定外观和约20%风味；茄套(Binder)固定结构；茄芯(Filler)是灵魂，通常由3-5种不同烟叶调配，决定浓郁度和主要口感。', keywords: ['结构', '茄衣', '配方'] },
+{ id: 'craft_ferment', title: '中式发酵：糊米与木桶', category: '工艺百科', content: '发酵是去杂气、生香气的关键。长城首创“糊米发酵法”，利用糯米发酵热气熏蒸；黄鹤楼擅长“木桶发酵”和“洞藏”，赋予烟叶独特的醇厚感。', keywords: ['发酵', '工艺', '糊米'] },
+{ id: 'craft_handmade', title: '全手工 vs 机制', category: '工艺百科', content: '“Totalmente a mano”(全手工)指从茄芯折叠到上茄衣全靠人手，透气性好；机制雪茄通常用碎叶做茄芯，口感较单薄。鉴别看茄帽：手工多为三层帽，机制多为预制孔。', keywords: ['手工', '机制', '鉴别'] },
+
+// --- 储存与搭配 ---
+{ id: 'care_7070', title: '黄金法则：双70原则', category: '储存养护', content: '储存雪茄的最佳环境是：相对湿度70%（波动65%-75%），温度70华氏度（约21℃）。太湿会长虫(烟草甲)或发霉，太干会干裂、味道辛辣。', keywords: ['养护', '湿度', '温度'] },
+{ id: 'care_revive', title: '雪茄干了能救吗？', category: '储存养护', content: '轻微干硬的雪茄可以挽救。方法是缓慢加湿：先放入62%湿度的环境几周，再逐步过渡到65%、69%。切忌直接接触水，会炸裂。', keywords: ['补水', '急救', '调整'] },
+{ id: 'pair_tea', title: '中式搭配：雪茄与茶', category: '搭配指南', content: '中式雪茄与中国茶是绝配。红茶（正山小种）激发焦甜香；普洱熟茶的陈香能承托浓郁型雪茄的豆香；乌龙茶适合清淡型雪茄。', keywords: ['搭配', '茶', '普洱'] },
+{ id: 'pair_spirit', title: '经典搭配：威士忌', category: '搭配指南', content: '单一麦芽威士忌的烟熏味与雪茄相得益彰。波本威士忌的香草甜味适合搭配马杜罗(深色)茄衣的雪茄。', keywords: ['搭配', '酒', '威士忌'] },
+{ id: 'pair_food', title: '食物搭配：黑巧与坚果', category: '搭配指南', content: '黑巧克力(70%+)的苦甜能中和烟气；无盐坚果(杏仁、核桃)能呼应雪茄中的坚果香。避免吃辣或酸的食物，会破坏味蕾。', keywords: ['搭配', '食物', '巧克力'] }
+];
+
+const PERSONAS = [
+{ id: 'beginner', name: '新手小白', desc: '完全不懂雪茄，不知道怎么抽，甚至不知道不能过肺。只关心会不会呛、贵不贵。', color: '#8FA893', open: '老板，这儿有那种...就是抽着玩，不头晕的吗？我第一次试。' },
+{ id: 'connoisseur', name: '挑剔老饕', desc: '懂行家，对湿度敏感，喜欢聊产区、工艺和陈年潜力。会用专业术语。', color: '#D9534F', open: '老板，我看你这柜子湿度表显示68%，对于陈年的古巴茄是不是有点低了？' },
+{ id: 'gift', name: '商务送礼', desc: '不懂雪茄，只在乎面子、包装和寓意。不在乎好不好抽，只在乎是不是名牌。', color: '#C5A059', open: '帮我参谋一下，送一个特别重要的领导，要那种拿出来就有面子的。' },
+{ id: 'young', name: '潮流青年', desc: '喜欢尝试新事物，看重包装是否好看、是否适合拍照发朋友圈。', color: '#5BC0DE', open: '嘿，最近有什么包装好看的新品吗？适合拍照发朋友圈那种。' }
+];
+
+// --- 2. AI Intelligence Layer (DeepSeek RAG) ---
+
+// 构建 RAG 上下文
+const getKnowledgeContext = () => {
+const products = PRODUCT_DB.map(p =>
+`- ${p.brand} ${p.name} (${p.series}): ${p.origin}, ${p.length}, 环径${p.ring}, 浓度:${p.strength}。风味:${p.flavor}。特点:${p.desc}`
+).join('\n');
+
+const articles = WIKI_ARTICLES.map(a =>
+`- [${a.category}] ${a.title}: ${a.content}`
+).join('\n');
+
+return `【内部知识库】：\n[产品库]\n${products}\n\n[百科库]\n${articles}`;
+};
+
+// 调用 DeepSeek API
+const callDeepSeekAPI = async (userQuery, systemPrompt) => {
+if (!apiKey || apiKey.includes("YOUR")) {
+console.error("Missing API Key");
+return null;
+}
+
+const API_URL = "https://api.deepseek.com/chat/completions";
+try {
+const response = await fetch(API_URL, {
+method: "POST",
+headers: {
+"Content-Type": "application/json",
+"Authorization": `Bearer ${apiKey}`
+},
+body: JSON.stringify({
+model: "deepseek-chat",
+messages: [
+{ role: "system", content: systemPrompt },
+{ role: "user", content: userQuery }
+],
+stream: false
+})
+});
+
+const data = await response.json();
+if (!response.ok) {
+throw new Error(data.error?.message || "DeepSeek API Error");
+}
+return data.choices[0].message.content;
+} catch (error) {
+console.error("DeepSeek API Failed:", error);
+return null;
+}
+};
+
+// 生成顾客（Customer）的回复 - 拟人化引擎 V3.0
+const generateCustomerResponse = async (userText, persona) => {
+const knowledgeBase = getKnowledgeContext();
+
+// 知识隔离逻辑
+let knowledgeInstruction = "";
+if (persona.id === 'connoisseur') {
+knowledgeInstruction = "你是懂行的，可以说行话。你可以基于知识库里的参数去挑剔店主，看看他专不专业。";
+} else {
+knowledgeInstruction = "【关键规则】：你完全不懂专业术语！禁止说：'环径'、'茄衣'、'双70'。如果店主说了专业词，你要表现出听不懂，或者只关心直观感受（贵不贵、好不好看）。";
+}
+
+const systemPrompt = `你正在进行一场销售演练。
+你扮演：顾客 ${persona.name}。
+用户扮演：零售店老板。
+
+你的性格/需求：${persona.desc}
+${knowledgeInstruction}
+
+【知识库事实(仅供参考，不要背诵)】：
+${knowledgeBase}
+
+【回复要求】：
+1. **像真人说话**：简短、口语化。控制在20字左右。
+2. **有来有回**：一次只表达一个意思。
+3. **情绪反应**：对推荐是否满意要直接表达。
+4. 严禁长篇大论。
+`;
+
+const aiResponse = await callDeepSeekAPI(userText, systemPrompt);
+return aiResponse || `（${persona.name} 正在思考...）`;
+};
+
+// 生成零售户（Retailer）的建议回复 (AI 助攻)
+const generateRetailerSuggestion = async (chatHistory, persona) => {
+const knowledgeBase = getKnowledgeContext();
+const systemPrompt = `你是一位金牌雪茄店长导师。正在辅助一位新手店主(用户)接待顾客。
+顾客画像：${persona.name} (${persona.desc})
+【内部知识库】：${knowledgeBase}
+
+任务：生成一句简短、自然、有杀伤力的推销话术。25字以内。
+`;
+
+const historyText = chatHistory.map(m => `${m.sender === 'user' ? '店主' : '顾客'}: ${m.text}`).join('\n');
+const userQuery = `当前对话记录：\n${historyText}\n\n(生成一句店主回复)`;
+
+const aiResponse = await callDeepSeekAPI(userQuery, systemPrompt);
+return aiResponse || "您看这款怎么样？";
+};
+
+// --- 智能顾问 (Hybrid RAG) ---
+const generateAdvisorResponse = async (userText) => {
+const knowledgeBase = getKnowledgeContext();
+const systemPrompt = `你是一个专业的雪茄零售专家助手。
+
+【回答策略】：
+1. **优先检索内部知识库**：首先检查下方的【优先参考的内部数据】。如果用户问的是在库产品的具体参数（如黄鹤楼、长城），必须**准确引用**。
+2. **大模型兜底**：如果用户的问题超出了知识库范围（如通用知识、竞品对比），**请利用你的广博知识进行解答**。
+3. **风格**：专业、客观、有帮助。回复不要太长，分点陈述。
+
+【优先参考的内部数据】：
+${knowledgeBase}`;
+
+const aiResponse = await callDeepSeekAPI(userText, systemPrompt);
+return aiResponse || "智能系统连接中断，请检查网络。";
+};
+
+// --- Sub-Components ---
+
+const DetailSheet = ({ item, onClose }) => {
+if (!item) return null;
+const isProduct = !!item.brand;
+
+return (
+<div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-300" onClick={onClose}>
+<div className="bg-[#FDFBF7] w-full h-[85vh] rounded-t-3xl p-6 overflow-y-auto shadow-2xl animate-in slide-in-from-bottom duration-300 pb-safe" onClick={e => e.stopPropagation()}>
+<div className="flex justify-end mb-2">
+<button onClick={onClose} className="p-2 bg-[#F0E6D9] rounded-full text-[#4B3621] hover:bg-[#E0D8CC]"><X size={20}/></button>
+</div>
+
+{isProduct ? (
+<>
+<div className="mb-6">
+<div className="flex flex-wrap gap-2 mb-3">
+<span className={`px-2 py-1 text-white text-[10px] font-bold uppercase rounded ${item.brand === '黄鹤楼' ? 'bg-[#8B5A2B]' : item.brand === '长城' ? 'bg-[#D9534F]' : 'bg-[#4B3621]'}`}>{item.brand}</span>
+<span className="px-2 py-1 bg-[#F0E6D9] text-[#8D7B68] text-[10px] font-bold uppercase rounded">{item.series}</span>
+</div>
+<h2 className="text-3xl font-serif font-bold text-[#4B3621] mb-2">{item.name}</h2>
+<p className="text-[#8D7B68] text-sm font-medium">{item.desc}</p>
+</div>
+
+<div className="grid grid-cols-2 gap-3 mb-6">
+<div className="bg-white p-4 rounded-2xl shadow-sm border border-[#F0E6D9]">
+<span className="text-[10px] text-[#8D7B68] uppercase block mb-1">环径 Ring</span>
+<span className="text-xl font-bold text-[#4B3621]">{item.ring}</span>
+</div>
+<div className="bg-white p-4 rounded-2xl shadow-sm border border-[#F0E6D9]">
+<span className="text-[10px] text-[#8D7B68] uppercase block mb-1">长度 Length</span>
+<span className="text-xl font-bold text-[#4B3621]">{item.length}</span>
+</div>
+<div className="bg-white p-4 rounded-2xl shadow-sm border border-[#F0E6D9] col-span-2 flex justify-between items-center">
+<div>
+<span className="text-[10px] text-[#8D7B68] uppercase block mb-1">浓度 Strength</span>
+<span className="text-lg font-bold text-[#4B3621]">{item.strength}</span>
+</div>
+<div className="flex gap-1">
+{[...Array(5)].map((_,i) => (
+<div key={i} className={`w-2 h-6 rounded-full ${i < (item.strength.includes('浓')?4:item.strength.includes('中')?3:2) ? 'bg-[#8B5A2B]' : 'bg-[#E0D8CC]'}`}></div>
+))}
+</div>
+</div>
+</div>
+
+<div className="bg-[#8FA893]/10 p-5 rounded-2xl mb-6">
+<h3 className="font-bold text-[#4B3621] mb-2 flex items-center gap-2 text-sm uppercase tracking-wider"><Volume2 size={16}/> 风味轮廓</h3>
+<p className="text-[#4B3621] leading-relaxed text-sm">{item.flavor}</p>
+</div>
+</>
+) : (
+<>
+<div className="mb-6 pb-6 border-b border-[#E0D8CC]">
+<span className="text-[#8B5A2B] text-xs font-bold uppercase tracking-widest mb-2 block">{item.category}</span>
+<h2 className="text-2xl font-serif font-bold text-[#4B3621] leading-snug">{item.title}</h2>
+</div>
+<div className="prose prose-sm text-[#4B3621]">
+<p className="leading-loose text-base">{item.content}</p>
+</div>
+<div className="mt-8 pt-6 border-t border-[#E0D8CC]">
+<h4 className="text-xs font-bold text-[#8D7B68] uppercase mb-3">相关关键词</h4>
+<div className="flex flex-wrap gap-2">
+{item.keywords.map(k => (
+<span key={k} className="px-3 py-1 bg-white border border-[#E0D8CC] rounded-full text-xs text-[#4B3621]">{k}</span>
+))}
+</div>
+</div>
+</>
+)}
+{/* Add bottom spacing for safe area */}
+<div className="h-8"></div>
+</div>
+</div>
+);
+};
+
+// --- Screen Components ---
+
+const HomeScreen = ({ onNavigate }) => (
+<div className="flex flex-col h-full pt-14 px-6 pb-6 space-y-6 overflow-y-auto custom-scrollbar">
+<div className="flex justify-between items-center mt-4 mb-2">
+<div>
+<p className="text-[#C5A059] text-[10px] font-bold uppercase tracking-[0.25em] mb-1 pl-0.5">Cigar Pro</p>
+<h1 className="text-[#4B3621] text-4xl font-serif font-black tracking-tight" style={{textShadow: '0 2px 4px rgba(0,0,0,0.05)'}}>雪茄智汇</h1>
+</div>
+<div className="w-10 h-10 rounded-full bg-[#E0D8CC] flex items-center justify-center border-2 border-white shadow-sm">
+<User size={20} color={COLORS.primary} />
+</div>
+</div>
+
+<div className="bg-gradient-to-br from-[#8B5A2B] to-[#5e3a1b] rounded-2xl p-6 text-white relative overflow-hidden shadow-xl shadow-[#8B5A2B]/20">
+<div className="relative z-10">
+<div className="flex items-center gap-2 mb-4 opacity-80">
+<BookOpen size={14} />
+<span className="text-[10px] font-bold uppercase tracking-[0.2em]">Daily Wisdom</span>
+</div>
+<p className="font-serif text-xl leading-relaxed mb-6 italic text-white/95">
+“只有那些坚定地相信自己的人，才能找到他们的雪茄。”
+</p>
+<div className="flex items-center gap-3 opacity-70">
+<div className="h-[1px] w-12 bg-white/50"></div>
+<p className="text-xs font-medium tracking-wider">加西亚·马尔克斯</p>
+</div>
+</div>
+</div>
+
+<div className="grid grid-cols-1 gap-4 pb-12">
+{[
+{ id: 'advisor', title: '智能顾问', sub: '查品规、问知识 (DeepSeek RAG)', icon: <MessageSquare/>, color: '#F0E6D9' },
+{ id: 'roleplay', title: '实战演练', sub: '真实语境顾客对战 + 金牌话术', icon: <Mic/>, color: '#E3E9E4' },
+{ id: 'wiki', title: '知识手册', sub: '品规大全 + 15条精选百科', icon: <BookOpen/>, color: '#F0E6D9' }
+].map(item => (
+<button key={item.id} onClick={() => onNavigate(item.id)} className="flex items-center gap-4 p-5 bg-white rounded-2xl shadow-sm active:scale-[0.98] transition-all text-left">
+<div style={{backgroundColor: item.color}} className="w-12 h-12 rounded-xl flex items-center justify-center text-[#4B3621]">
+{React.cloneElement(item.icon, { size: 24 })}
+</div>
+<div className="flex-1">
+<h3 className="font-bold text-lg text-[#4B3621]">{item.title}</h3>
+<p className="text-xs text-[#8D7B68] mt-1">{item.sub}</p>
+</div>
+<ChevronRight size={18} className="text-[#E0D8CC]" />
+</button>
+))}
+</div>
+</div>
+);
+
+const WikiScreen = ({ onBack }) => {
+const [tab, setTab] = useState('products');
+const [filterBrand, setFilterBrand] = useState('all');
+const [filterCat, setFilterCat] = useState('all');
+const [search, setSearch] = useState('');
+const [selectedItem, setSelectedItem] = useState(null);
+
+const getFilteredItems = () => {
+let items = [];
+if (tab === 'products') {
+items = PRODUCT_DB;
+if (filterBrand === 'hhl') items = items.filter(p => p.brand === '黄鹤楼');
+if (filterBrand === 'gw') items = items.filter(p => p.brand === '长城');
+if (filterBrand === 'intl') items = items.filter(p => p.tags.includes('国际'));
+} else {
+items = WIKI_ARTICLES;
+if (filterCat === 'basic') items = items.filter(a => a.category.includes('基础'));
+if (filterCat === 'craft') items = items.filter(a => a.category.includes('工艺'));
+if (filterCat === 'history') items = items.filter(a => a.category.includes('历史'));
+if (filterCat === 'pairing') items = items.filter(a => a.category.includes('搭配') || a.category.includes('养护'));
+}
+if (search) {
+items = items.filter(i =>
+(i.name || i.title).toLowerCase().includes(search.toLowerCase()) ||
+(i.brand || '').toLowerCase().includes(search.toLowerCase())
+);
+}
+return items;
+};
+
+const items = getFilteredItems();
+
+return (
+<div className="flex flex-col h-full bg-[#F5F0E6]">
+<div className="pt-12 px-6 pb-2 bg-[#F5F0E6] sticky top-0 z-10 border-b border-[#E0D8CC]">
+<div className="flex items-center gap-2 mb-4">
+<button onClick={onBack} className="p-2 -ml-2 rounded-full hover:bg-black/5"><ArrowLeft size={20} color={COLORS.text}/></button>
+<h2 className="font-serif font-bold text-2xl text-[#4B3621]">知识手册</h2>
+</div>
+
+<div className="flex p-1 bg-white rounded-xl mb-4 shadow-sm border border-[#E0D8CC]">
+<button onClick={() => setTab('products')} className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${tab === 'products' ? 'bg-[#8B5A2B] text-white' : 'text-[#8D7B68]'}`}>品规大全</button>
+<button onClick={() => setTab('knowledge')} className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${tab === 'knowledge' ? 'bg-[#8B5A2B] text-white' : 'text-[#8D7B68]'}`}>雪茄百科</button>
+</div>
+
+<div className="flex gap-2 overflow-x-auto no-scrollbar pb-3">
+{tab === 'products' ? (
+['all', 'hhl', 'gw', 'intl'].map((id, i) => {
+const labels = {all:'全部', hhl:'黄鹤楼', gw:'长城', intl:'国际精选'};
+return (
+<button key={id} onClick={() => setFilterBrand(id)} className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap border ${filterBrand === id ? 'bg-[#4B3621] text-white border-transparent' : 'bg-white text-[#8D7B68] border-[#E0D8CC]'}`}>{labels[id]}</button>
+);
+})
+) : (
+['all', 'basic', 'craft', 'history', 'pairing'].map((id, i) => {
+const labels = {all:'全部', basic:'基础入门', craft:'工艺百科', history:'历史文化', pairing:'搭配养护'};
+return (
+<button key={id} onClick={() => setFilterCat(id)} className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap border ${filterCat === id ? 'bg-[#4B3621] text-white border-transparent' : 'bg-white text-[#8D7B68] border-[#E0D8CC]'}`}>{labels[id]}</button>
+);
+})
+)}
+</div>
+</div>
+
+<div className="flex-1 overflow-y-auto px-6 py-4 space-y-3 custom-scrollbar pb-12">
+{items.map((item, idx) => (
+<div key={idx} onClick={() => setSelectedItem(item)} className="bg-white p-4 rounded-xl shadow-sm active:scale-[0.98] transition-transform border border-transparent hover:border-[#8B5A2B]/20 cursor-pointer">
+{item.brand ? (
+<div className="flex justify-between items-start">
+<div>
+<div className="flex gap-2 mb-1.5">
+<span className={`text-[10px] font-bold px-1.5 py-0.5 rounded text-white ${item.brand === '黄鹤楼' ? 'bg-[#8B5A2B]' : item.brand === '长城' ? 'bg-[#D9534F]' : 'bg-[#4B3621]'}`}>{item.brand}</span>
+<span className="text-[10px] font-bold text-[#8D7B68] px-1.5 py-0.5 bg-[#F5F0E6] rounded">{item.series}</span>
+</div>
+<h3 className="font-bold text-[#4B3621] text-lg">{item.name}</h3>
+</div>
+<ChevronRight size={16} className="text-[#E0D8CC] mt-2" />
+</div>
+) : (
+<div className="flex items-start gap-3">
+<div className="w-10 h-10 rounded-lg bg-[#E3E9E4] flex items-center justify-center flex-shrink-0 text-[#557C55]">
+{item.category.includes('基础') ? <Lightbulb size={18}/> : item.category.includes('历史') ? <BookOpen size={18}/> : item.category.includes('工艺') ? <Settings size={18}/> : <Wine size={18}/>}
+</div>
+<div className="flex-1">
+<div className="flex justify-between">
+<h3 className="font-bold text-[#4B3621]">{item.title}</h3>
+<span className="text-[10px] text-[#8D7B68] bg-[#F5F0E6] px-1.5 py-0.5 rounded">{item.category}</span>
+</div>
+<p className="text-xs text-[#8D7B68] mt-1 line-clamp-2">{item.content}</p>
+</div>
+</div>
+)}
+</div>
+))}
+{items.length === 0 && <div className="text-center py-10 text-[#8D7B68]">未找到相关内容</div>}
+</div>
+<DetailSheet item={selectedItem} onClose={() => setSelectedItem(null)} />
+</div>
+);
+};
+
+const AdvisorScreen = ({ onBack }) => {
+const [messages, setMessages] = useState([{ id: 1, text: "你好！我是 DeepSeek 驱动的智能顾问。您可以问我任何关于雪茄的问题！", sender: 'ai' }]);
+const [input, setInput] = useState('');
+const [isTyping, setIsTyping] = useState(false);
+const scrollRef = useRef(null);
+
+const quickQs = ["黄鹤楼1916环径是多少", "长城132秘史", "雪茄太湿了怎么救？", "新手推荐"];
+
+const handleSend = async (text = input) => {
+if (!text.trim()) return;
+const newMsg = { id: Date.now(), text, sender: 'user' };
+setMessages(p => [...p, newMsg]);
+setInput('');
+setIsTyping(true);
+
+const response = await generateAdvisorResponse(text);
+
+setMessages(p => [...p, { id: Date.now()+1, text: response, sender: 'ai' }]);
+setIsTyping(false);
+};
+
+useEffect(() => { if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight; }, [messages, isTyping]);
+
+return (
+<div className="flex flex-col h-full bg-[#F5F0E6]">
+<div className="pt-12 px-4 pb-3 bg-[#F5F0E6] border-b border-[#E0D8CC] flex items-center gap-3">
+<button onClick={onBack} className="p-2 rounded-full hover:bg-black/5"><ArrowLeft size={20} color={COLORS.text}/></button>
+<div>
+<h2 className="font-bold text-lg text-[#4B3621]">智能顾问</h2>
+<div className="flex items-center gap-1 text-[10px] text-[#8D7B68] font-bold uppercase tracking-wide"><BrainCircuit size={10} fill="#8D7B68"/> DeepSeek Online</div>
+</div>
+</div>
+<div className="flex-1 overflow-y-auto p-4 space-y-4" ref={scrollRef}>
+{messages.map(m => (
+<div key={m.id} className={`flex ${m.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+<div className={`max-w-[85%] p-4 rounded-2xl text-sm leading-relaxed shadow-sm ${m.sender === 'user' ? 'bg-[#8B5A2B] text-white rounded-br-none' : 'bg-white text-[#4B3621] rounded-bl-none'}`}>
+{m.text}
+</div>
+</div>
+))}
+{isTyping && <div className="flex items-center gap-2 px-4 py-2 text-xs text-[#8D7B68]"><RefreshCw size={12} className="animate-spin"/> AI 正在检索/生成...</div>}
+<div className="h-8"></div>
+</div>
+<div className="p-4 bg-white border-t border-[#E0D8CC] pb-8">
+<div className="flex gap-2 mb-3 overflow-x-auto no-scrollbar">
+{quickQs.map(q => <QuickChip key={q} text={q} onClick={() => handleSend(q)} />)}
+</div>
+<div className="flex gap-2">
+<input className="flex-1 bg-[#F5F0E6] rounded-xl px-4 py-3 text-sm outline-none text-[#4B3621]" placeholder="输入您的问题..." value={input} onChange={e => setInput(e.target.value)} onKeyPress={e => e.key === 'Enter' && handleSend()} />
+<button onClick={() => handleSend()} className="bg-[#8B5A2B] w-12 rounded-xl flex items-center justify-center text-white"><Send size={18}/></button>
+</div>
+</div>
+</div>
+);
+};
+
+const RolePlayScreen = ({ onBack }) => {
+const [step, setStep] = useState('select_mode');
+const [gameMode, setGameMode] = useState(null);
+const [persona, setPersona] = useState(null);
+const [state, setState] = useState('idle');
+const [transcript, setTranscript] = useState([]);
+const [inputMode, setInputMode] = useState(true);
+const [textInput, setTextInput] = useState('');
+const [recognitionError, setRecognitionError] = useState(null);
+const [interimText, setInterimText] = useState('');
+const [suggestionLoading, setSuggestionLoading] = useState(false);
+const scrollRef = useRef(null);
+const recognitionRef = useRef(null);
+
+useEffect(() => {
+const randomPersona = PERSONAS[Math.floor(Math.random() * PERSONAS.length)];
+setPersona(randomPersona);
+}, []);
+
+const startGame = (mode) => {
+setGameMode(mode);
+setStep('chat');
+if (mode === 'passive') {
+setTranscript([{ id: 1, text: persona.open, sender: 'ai' }]);
+} else {
+setTranscript([{ id: 1, text: `(顾客 ${persona.name} 正在看柜台... 请您主动打招呼)`, sender: 'system' }]);
+}
+};
+
+const handleResponse = async (text) => {
+if (!persona) return;
+setState('processing');
+setTranscript(p => [...p, { id: Date.now(), text, sender: 'user' }]);
+
+const reply = await generateCustomerResponse(text, persona);
+
+setTranscript(p => [...p, { id: Date.now()+1, text: reply, sender: 'ai' }]);
+setState('speaking');
+
+if ('speechSynthesis' in window) {
+window.speechSynthesis.cancel();
+const u = new SpeechSynthesisUtterance(reply);
+u.lang = 'zh-CN';
+u.onend = () => setState('idle');
+window.speechSynthesis.speak(u);
+} else { setTimeout(() => setState('idle'), 2000); }
+};
+
+const handleGetSuggestion = async () => {
+setSuggestionLoading(true);
+const suggestion = await generateRetailerSuggestion(transcript, persona);
+setTextInput(suggestion);
+setSuggestionLoading(false);
+setInputMode(true);
+};
+
+const initSpeech = () => {
+if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+setRecognitionError("不支持语音，请切换键盘");
+setInputMode(true);
+return false;
+}
+try {
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+recognitionRef.current = new SpeechRecognition();
+recognitionRef.current.continuous = false;
+recognitionRef.current.lang = 'zh-CN';
+recognitionRef.current.interimResults = true;
+recognitionRef.current.onsoundstart = () => { setRecognitionError(null); };
+recognitionRef.current.onresult = (event) => {
+let finalTranscript = '';
+let currentInterim = '';
+for (let i = event.resultIndex; i < event.results.length; ++i) {
+if (event.results[i].isFinal) finalTranscript += event.results[i][0].transcript;
+else currentInterim += event.results[i][0].transcript;
+}
+if (currentInterim) setInterimText(currentInterim);
+if (finalTranscript) { setInterimText(''); handleResponse(finalTranscript); }
+};
+recognitionRef.current.onerror = (event) => {
+if (event.error === 'no-speech') { setRecognitionError("未听到声音"); setState('idle'); return; }
+setRecognitionError("识别中断"); setState('idle');
+};
+recognitionRef.current.onend = () => { if (state === 'listening') setState('idle'); };
+recognitionRef.current.start();
+return true;
+} catch (e) { setRecognitionError("启动失败"); return false; }
+};
+
+const handleMicClick = () => {
+if (state !== 'idle') return;
+setRecognitionError(null); setInterimText('');
+if (initSpeech()) setState('listening');
+};
+
+useEffect(() => { if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight; }, [transcript, state, interimText]);
+
+if (step === 'select_mode') return (
+<div className="flex flex-col h-full bg-[#F5F0E6]">
+<div className="pt-12 px-6 pb-2"><button onClick={onBack}><ArrowLeft size={20} color={COLORS.text}/></button><h2 className="text-2xl font-bold text-[#4B3621] mt-4 mb-2">选择演练模式</h2><p className="text-sm text-[#8D7B68]">系统已随机抽取顾客，请选择接触方式。</p></div>
+<div className="p-6 space-y-4">
+<Card onClick={() => startGame('active')} className="border-l-[6px] border-[#8B5A2B] group cursor-pointer hover:bg-white/80">
+<div className="flex justify-between items-center mb-2"><h3 className="font-bold text-lg text-[#4B3621]">主动营销 (Active)</h3><Footprints size={20} className="text-[#8B5A2B]" /></div>
+<p className="text-xs text-[#8D7B68]">顾客正在浏览或犹豫。您需要主动破冰，挖掘需求。</p>
+</Card>
+<Card onClick={() => startGame('passive')} className="border-l-[6px] border-[#8FA893] group cursor-pointer hover:bg-white/80">
+<div className="flex justify-between items-center mb-2"><h3 className="font-bold text-lg text-[#4B3621]">被动接待 (Passive)</h3><Ear size={20} className="text-[#8FA893]" /></div>
+<p className="text-xs text-[#8D7B68]">顾客带着明确需求进店。您需要准确推荐，回应诉求。</p>
+</Card>
+</div>
+</div>
+);
+
+if (!persona) return <div className="flex items-center justify-center h-full bg-[#F5F0E6] text-[#8D7B68]">正在安排顾客...</div>;
+
+return (
+<div className="flex flex-col h-full bg-[#F5F0E6]">
+<div className="pt-12 px-4 pb-3 flex justify-between items-center border-b border-[#E0D8CC]">
+<button onClick={onBack}><ArrowLeft size={20} color={COLORS.text}/></button>
+<div className="flex flex-col items-center">
+<span className="text-[10px] text-[#8D7B68] font-bold uppercase tracking-widest mb-0.5">{gameMode === 'active' ? '主动营销中' : '被动接待中'}</span>
+<div className="flex items-center gap-1.5">
+<span className="font-bold text-[#4B3621]">{persona.name}</span>
+<span className="text-[10px] px-1.5 py-0.5 rounded text-white" style={{backgroundColor: persona.color}}>{persona.desc.substring(0, 4)}...</span>
+</div>
+</div>
+<button onClick={() => setInputMode(!inputMode)} className="p-2 text-[#8B5A2B]">{inputMode ? <Mic size={20}/> : <Keyboard size={20}/>}</button>
+</div>
+
+<div className="flex-1 overflow-y-auto p-4 space-y-4" ref={scrollRef}>
+{transcript.map(t => (
+<div key={t.id} className={`flex ${t.sender === 'user' ? 'justify-end' : t.sender === 'system' ? 'justify-center' : 'justify-start'}`}>
+{t.sender === 'system' ? (
+<div className="text-xs text-[#8D7B68] bg-[#E3E9E4]/50 px-3 py-1 rounded-full">{t.text}</div>
+) : (
+<div className={`max-w-[85%] p-4 rounded-2xl text-sm leading-relaxed ${t.sender === 'user' ? 'bg-[#E3E9E4] text-[#4B3621]' : 'bg-white text-[#4B3621]'}`}>{t.text}</div>
+)}
+</div>
+))}
+{interimText && <div className="flex flex-col items-end animate-pulse"><span className="text-[10px] uppercase font-bold text-[#8D7B68] mb-1.5 tracking-wider">正在识别...</span><div className="max-w-[90%] text-xl font-medium leading-snug font-serif text-[#8B5A2B]/60 text-right">"{interimText}"</div></div>}
+{state === 'processing' && <div className="text-center text-xs text-[#8D7B68] animate-pulse">顾客正在思考...</div>}
+<div className="h-4"></div>
+</div>
+
+<div className="p-4 bg-white rounded-t-3xl shadow-[0_-5px_15px_rgba(0,0,0,0.05)] pb-8">
+{recognitionError && <div className="mb-2 text-red-600 text-xs text-center">{recognitionError}</div>}
+
+{/* Control Bar */}
+<div className="flex items-center gap-2">
+{/* AI Suggestion Button */}
+<button
+onClick={handleGetSuggestion}
+disabled={suggestionLoading || state === 'processing'}
+className={`flex items-center justify-center w-12 h-12 rounded-xl transition-all ${textInput ? 'bg-[#8FA893] text-white' : 'bg-white border border-[#E0D8CC] text-[#8B5A2B]'}`}
+>
+{suggestionLoading ? <RefreshCw size={18} className="animate-spin"/> : textInput ? <RefreshCw size={18}/> : <Sparkles size={18}/>}
+</button>
+
+{/* Input Area */}
+{inputMode ? (
+<>
+<input
+className="flex-1 bg-[#F5F0E6] rounded-xl px-4 py-3 text-sm outline-none text-[#4B3621]"
+value={textInput}
+onChange={e => setTextInput(e.target.value)}
+placeholder="输入回复..."
+onKeyPress={e => e.key === 'Enter' && (handleResponse(textInput), setTextInput(''))}
+/>
+<button onClick={() => {handleResponse(textInput); setTextInput('');}} className="bg-[#8B5A2B] w-12 h-12 rounded-xl text-white flex items-center justify-center"><Send size={18}/></button>
+</>
+) : (
+<div className="flex-1 flex justify-center">
+<button onClick={handleMicClick} className={`w-16 h-12 rounded-xl flex items-center justify-center transition-all ${state === 'listening' ? 'bg-[#D9534F] text-white animate-pulse' : 'bg-[#8B5A2B] text-white'}`}>
+{state === 'listening' ? <Volume2 size={24}/> : <Mic size={24}/>}
+</button>
+</div>
+)}
+</div>
+
+{/* Hint Text */}
+<div className="mt-2 text-center">
+{!textInput && <span className="text-[10px] text-[#8D7B68] opacity-60">点击左侧 ✨ AI 可生成金牌话术</span>}
+{textInput && <span className="text-[10px] text-[#8D7B68]">AI 已生成建议，您可以修改或发送。不满意可点击 🔄 重试。</span>}
+</div>
+</div>
+</div>
+);
+};
+
+// --- App Root ---
+
+function App() {
+const [screen, setScreen] = useState('home');
+return (
+// 修改点：移除外层模拟手机壳的 div，改为全屏容器
+<div className="w-full h-[100dvh] bg-[#F5F0E6] overflow-hidden relative font-sans flex flex-col">
+<StatusBar />
+{screen === 'home' && <HomeScreen onNavigate={setScreen} />}
+{screen === 'advisor' && <AdvisorScreen onBack={() => setScreen('home')} />}
+{screen === 'roleplay' && <RolePlayScreen onBack={() => setScreen('home')} />}
+{screen === 'wiki' && <WikiScreen onBack={() => setScreen('home')} />}
+
+{/* Home Indicator (可选，保留 iOS 风格底条) */}
+<div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 w-32 h-1 bg-[#4B3621] opacity-20 rounded-full z-50 pointer-events-none mb-[env(safe-area-inset-bottom)]"></div>
+</div>
+);
+}
+
+// 挂载应用
+const root = createRoot(document.getElementById('root'));
+root.render(<App />);
+</script>
+</body>
+</html>
